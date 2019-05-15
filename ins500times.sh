@@ -39,11 +39,12 @@ awk  -F ',' '{gsub(/[0-9]/,"0",$17); print }' OFS=","  /tmp/loaddata_studystatus
 awk  -F ',' '{gsub(/[0-9]/,"0",$18); print }' OFS=","  /tmp/loaddata_studystatus5_$tms.sql > /tmp/loaddata_studystatus6_$tms.sql
 awk  -F ',' '{gsub(/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/,"'"'NULL'"'",$9); print }' OFS=","  /tmp/loaddata_studystatus6_$tms.sql > /tmp/loaddata_studystatus7_$tms.sql
 awk  -F ',' '{gsub(/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/,"'"'NULL'"'",$10); print }' OFS=","  /tmp/loaddata_studystatus7_$tms.sql > /tmp/loaddata_studystatus8_$tms.sql
+awk -v cntrID=$cntr -F ',' '{gsub(/0-9/,cntrID,$16); print }' OFS=","  /tmp/loaddata_studystatus8_$tms.sql > /tmp/loaddata_studystatus9_$tms.sql
 
 ####-CleanUp Unnecessary Files -Edit StudyStatus
-rm -f /tmp/loaddata_studystatus{1,2,3,4,5,6,7}_$tms.sql
+rm -f /tmp/loaddata_studystatus{1,2,3,4,5,6,7,8}_$tms.sql
 
-echo -e "-----End of parsing 2 file the Reult is /tmp/loaddata_studystatus8_$tms.sql-----"  
+echo -e "-----End of parsing 2 file the Reult is /tmp/loaddata_studystatus9_$tms.sql-----"  
 ##########################################################-Endof Parsing StudyStatus
 
 ##########################################################-Edit Parsing  Requests####
@@ -84,33 +85,6 @@ echo -e "-----End of parsing 2 file the Reult is /tmp/loaddata_mgrmessage7__$tms
 ##########################################################-Endof Parsing Messages
 
 
-###########################################################-Edit Parsing cra Query-Messages
-echo -e "-----Edit Parsing cra Query-Messages------"
-tmsplus= $tms + 1
-awk  -F ',' '{gsub(/[0-9]/,"'"'NULL'"'",$1); print }' OFS=","   ./load_cra_query_message.sql > /tmp/load_cra_query_message1_$tms.sql
-awk -v tmsplus=$tmsplus -F ',' '{gsub(/[0-9]/,tmsplus,$3); print }' OFS=","    /tmp/load_cra_query_message1_$tms.sql >  /tmp/load_cra_query_message2_$tms.sql
-
-####-CleanUp Unnecessary Files -Edit Query-Messages
-rm -f /tmp/load_cra_query_message{1}_$tms.sql
-
-
-echo -e "-----END of Edit Parsing cra Query-Messagesthe result is /tmp/load_cra_query_message2_$tms.sql-----"
-##########################################################-End of Parsing cra Query-Messages
-
-##########################################################-Edit Parsing cra Query-Requests
-echo -e "-----Edit Parsing cra Query-Requests------"
-awk  -F ',' '{gsub(/[0-9]/,"'"'NULL'"'",$1); print }' OFS=","   ./load_cra_query_request.sql > /tmp/load_cra_query_request1_$tms.sql
-awk  -F ',' '{gsub(/[0-9]/,"'"'NULL'"'",$5); print }' OFS=","    /tmp/load_cra_query_request1_$tms.sql >  /tmp/load_cra_query_request2_$tms.sql
-awk  -v ptnID=$tms  -F ',' '{gsub(/[0-9]/,ptnID,$7); print }' OFS="," /tmp/load_cra_query_request2_$tms.sql > /tmp/load_cra_query_request3_$tms.sql
-
-####-CleanUp Unnecessary Files -Edit Query-Requests
-rm -f /tmp/load_cra_query_request{1,2}_$tms.sql
-
-echo -e "-----END of Edit Parsing cra Query-Requests result is /tmp/load_cra_query_request3_$tms.sql ------"
-##########################################################-End of Paesing cra Query-Requests
-
-
-
 echo -e "-----Start of Creating New patient-----"
 ##########################################################-Insert In Patient Table
 echo -e "-----Start of Insert in Patients Table for  New patient-----"
@@ -129,10 +103,11 @@ fi
 
 mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME << EOF
 SET @tms='${tms}';
+SET @cntr='${cntr}';
 --SET @ptncode=CONCAT('5599100', @tms);
 SET @ptncode='${pid}';
 SELECT @ptncode;
-INSERT INTO tx_clinica_domain_model_patient (uid, pid, center, group_type, tstamp, crdate, cruser_id, patient_code, status, treatment) VALUES (@tms, 21, 1, '', 1554973644, 0, 0, @ptncode, 4, 0);
+INSERT INTO tx_clinica_domain_model_patient (uid, pid, center, group_type, tstamp, crdate, cruser_id, patient_code, status, treatment) VALUES (@tms, 21, , @cntr, 1554973644, 0, 0, @ptncode, 4, 0);
 EOF
 ##########################################################-Insert In Form Data  
 echo -e "-----Start of Insert Data in Form Data  Table for  New patient-----"
@@ -140,15 +115,16 @@ mysql --user=$DB_USER --password=$DB_PASSWD --default_character_set utf8 $DB_NAM
 ##########################################################-Update Center Count 
 echo -e "----Update Center table with the sum of Patients -----"
 mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME << EOF 
-SET @cptncount := (select patients from tx_clinica_domain_model_center where center_code = 991);
+SET @cntr='${cntr}';
+SET @cptncount := (select patients from tx_clinica_domain_model_center where uid = @cntr);
 --select @cptncount;
 SET @ecptncount:= @cptncount + 1;
 --select @ecptncount;
-UPDATE tx_clinica_domain_model_center SET patients = @ecptncount WHERE center_code = "991"
+UPDATE tx_clinica_domain_model_center SET patients = @ecptncount WHERE uid =  @cntr;
 EOF
 ##########################################################-Insert In Study Status 
 echo -e "---Start of Insert Data in Study Status for  New patient------"
-mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/loaddata_studystatus8_$tms.sql
+mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/loaddata_studystatus9_$tms.sql
 
 ##########################################################-Insert In mgrrequest
 echo -e "---Start of Insert Data in  mgrrequest for  New patient------"
@@ -159,13 +135,6 @@ echo -e "---Start of Insert Data in  mgrmessages for  New patient------"
 mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/loaddata_mgrmessage1_$tms.sql
 
 
-##########################################################-Insert In cra Query-Messages
-#echo -e "---Start of Insert Data  cra Query-Messages for  New patient------"
-#mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/load_cra_query_message2_$tms.sql
-
-##########################################################-Insert cra Query-Requests
-#echo -e "---Start of Insert Data cra Query-requests for  New patient------"
-#mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/load_cra_query_request3_$tms.sql
 
 #########################################################
 echo -e "----Update  tableof requests with the form uid fro each patient -----"
