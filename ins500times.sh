@@ -9,6 +9,7 @@ echo -e $DB_TABLE
 #awk -F ',' '{gsub("2","3",$1); print}' OFS="," ./insertPatient2.csv > ptn_3.csv
 
 len=$1
+cntr=$2
 # echo $len
 ## Use bash for loop 
 for (( i=1; i<=$len; i++ )); do 
