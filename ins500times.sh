@@ -1,15 +1,21 @@
 #!/bin/bash
 ## Vars Definition for  this Script 
-DB_USER=root
+DB_USER=admin
 DB_PASSWD=admin89!
-DB_NAME=emn23_demo
-echo -e $DB_NAME
-echo -e $DB_TABLE
+DB_NAME=emn235k
+
 #Ptn=$'\r\n'  command eval  'pstcsv=($(cat ~/StartUPScripts/SQLParse/insertPatients.csv))'
 #awk -F ',' '{gsub("2","3",$1); print}' OFS="," ./insertPatient2.csv > ptn_3.csv
 
 len=$1
 cntr=$2
+if [[ $len = ""  && $cntr = "" ]]; then 
+echo " Please specify the patient count you want to import param 1 and please specify the center id for exmple 1, 2, 3"
+exit
+else
+continue;
+fi
+
 # echo $len
 ## Use bash for loop 
 for (( i=1; i<=$len; i++ )); do 
@@ -51,7 +57,7 @@ echo -e "-----End of parsing 2 file the Reult is /tmp/loaddata_studystatus9_$tms
 
 awk  -F ',' '{gsub(/[0-9]/,"'"'NULL'"'",$1); print }' OFS=","   ./loaddata_mgrrequest.sql > /tmp/loaddata_mgrrequest1_$tms.sql
 awk -v ptnID=$tms -F ',' '{gsub(/[0-9]/,ptnID,$7); print }' OFS=","  /tmp/loaddata_mgrrequest1_$tms.sql > /tmp/loaddata_mgrrequest2_$tms.sql
-
+awk -v cntrID=$cntr -F ',' '{gsub(/[0-9]/,cntrID,$3); print }' OFS=","  /tmp/loaddata_mgrrequest2_$tms.sql > /tmp/loaddata_mgrrequest3_$tms.sql
 
 # awk  -F ',' '{gsub(/[0-9]/,"'"'NULL'"'",$1); print }' OFS=","   ./loaddata_mgrrequest.sql > /tmp/loaddata_mgrrequest1_$tms.sql
 # awk -F ',' '{gsub(/[0-9]/,"1",$6); print }' OFS=","  /tmp/loaddata_mgrrequest1_$tms.sql > /tmp/loaddata_mgrrequest2_$tms.sql
@@ -61,7 +67,7 @@ awk -v ptnID=$tms -F ',' '{gsub(/[0-9]/,ptnID,$7); print }' OFS=","  /tmp/loadda
 # awk  -F ',' '{gsub(/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/,"'"'NULL'"'",$20); print }' OFS=","  /tmp/loaddata_mgrrequest5_$tms.sql > /tmp/loaddata_mgrrequest6_$tms.sql
 
 ####-CleanUp Unnecessary Files -Edit mgrrequests
-rm -f /tmp/loaddata_mgrrequest{1}_$tms.sql
+rm -f /tmp/loaddata_mgrrequest{1,2}_$tms.sql
 
 echo -e "-----End of parsing 2 file the Reult is /tmp/loaddata_mgrrequest2__$tms.sql-----"  
 ##########################################################-Endof Parsing Requests
@@ -128,7 +134,7 @@ mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/loaddata_studystatus
 
 ##########################################################-Insert In mgrrequest
 echo -e "---Start of Insert Data in  mgrrequest for  New patient------"
-mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/loaddata_mgrrequest2_$tms.sql
+mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME < /tmp/loaddata_mgrrequest3_$tms.sql
 
 ##########################################################-Insert In mgrmessages
 echo -e "---Start of Insert Data in  mgrmessages for  New patient------"
